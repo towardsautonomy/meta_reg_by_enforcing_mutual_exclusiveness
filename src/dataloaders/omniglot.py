@@ -31,7 +31,7 @@ class DataGenerator(object):
         """
         
         # get config
-        self.labels_folder = config.get('labels_folder', 'labels')
+        self.labels_folder = config.get('labels_folder', 'datasets/omniglot_resized/labels')
         self.data_folder = config.get('data_folder', 'datasets/omniglot_resized')
         self.img_size = config.get('img_size', (28, 28))
 
