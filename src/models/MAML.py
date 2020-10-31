@@ -104,7 +104,7 @@ class MAML(tf.keras.Model):
             for key in self.conv_layers.conv_weights.keys():
                 self.inner_update_lr_dict[key] = [tf.Variable(self.inner_update_lr, name='inner_update_lr_%s_%d' % (key, j)) for j in range(num_inner_updates)]
   
-    # @tf.function
+    @tf.function
     def call(self, inp, meta_batch_size=25, num_inner_updates=1):
         def task_inner_loop(inp, reuse=True,
                           meta_batch_size=25, num_inner_updates=1):
