@@ -1,0 +1,3 @@
+from .omniglot import DataGenerator as OmniglotDataGenerator
+from .omniglot_mutually_exclusive import DataGenerator as OmniglotDataGeneratorMutExclusive
+from .pose_dataset import DataGenerator as PoseDataGenerator

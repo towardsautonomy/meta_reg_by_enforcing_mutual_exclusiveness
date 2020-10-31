@@ -1,0 +1,2 @@
+iter,task_train_acc_pre_optim,task_train_acc_post_optim,task_test_acc_pre_optim,task_test_acc_post_optim
+10,0.1,0.103515625,0.1,0.100781254

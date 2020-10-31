@@ -1,0 +1,11 @@
+models/
+!src/models/
+*.zip
+omniglot_resized
+__pycache__
+.ipynb_checkpoints
+pose_data/mjkey.txt
+datasets/
+!datasets/omniglot_resized/labels
+!datasets/pascal3d_pose
+*.pkl
