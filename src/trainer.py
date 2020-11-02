@@ -153,7 +153,6 @@ def meta_train_fn(model, exp_string, data_generator,
                 elif dataset == 'pose':
                     task_test_loss_pre_optim = result[2].numpy()
                     task_test_loss_post_optim = result[-3][-1].numpy()
-                    print(task_test_loss_post_optim)
                     print('Meta-validation pre-inner-loop train loss: %.5f, meta-validation post-inner-loop test loss: %.5f' % (task_test_loss_pre_optim, task_test_loss_post_optim))
 
             if (itr!=0) and itr % LOG_CSV_INTERVAL == 0: 

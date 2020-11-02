@@ -11,7 +11,7 @@ def accuracy(labels, predictions):
     return tf.reduce_mean(tf.cast(tf.equal(labels, predictions), dtype=tf.float32))
 
 def l2_loss(pred, label):
-    return tf.nn.l2_loss(tf.reduce_mean(tf.cast((pred - label), dtype=tf.float32)))
+    return tf.cast((tf.nn.l2_loss(pred - label) / label.shape[0] * label.shape[1]), dtype=tf.float32)
 
 """Convolutional layers used by MAML model."""
 ## NOTE: You do not need to modify this block but you will need to use it.
@@ -106,8 +106,7 @@ class MAML(tf.keras.Model):
   
     @tf.function
     def call(self, inp, meta_batch_size=25, num_inner_updates=1):
-        def task_inner_loop(inp, reuse=True,
-                          meta_batch_size=25, num_inner_updates=1):
+        def task_inner_loop(inp, meta_batch_size=25, num_inner_updates=1):
             """
             Perform gradient descent for one task in the meta-batch (i.e. inner-loop).
             Args:
@@ -115,10 +114,10 @@ class MAML(tf.keras.Model):
                 labels used for calculating inner loop gradients and input_ts and label_ts are the inputs and
                 labels used for evaluating the model after inner updates.
                 Should be shapes:
-                  input_tr: [N*K, 784]
-                  input_ts: [N*K, 784]
-                  label_tr: [N*K, N]
-                  label_ts: [N*K, N]
+                  input_tr: [N*K, flattened_img]
+                  input_ts: [N*K, flattened_img]
+                  label_tr: [N*K, output_dim]
+                  label_ts: [N*K, output_dim]
             Returns:
               task_output: a list of outputs, losses and accuracies at each inner update
             """
@@ -209,7 +208,6 @@ class MAML(tf.keras.Model):
                                         tf.identity(input_ts[0]), 
                                         tf.identity(label_tr[0]), 
                                         tf.identity(label_ts[0])),
-                              False,
                               meta_batch_size,
                               num_inner_updates)
         

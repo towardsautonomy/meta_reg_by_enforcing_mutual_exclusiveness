@@ -14,11 +14,11 @@
 
 ## Experiments    
 
-*Table I - Experiment Results*
+<!-- *Table I - Experiment Results*
 | N-way | meta-train K-shot | meta-test K-shot | MAML Test Accuracy | MAML Accuracy StdDev |
 |-------|-------------------|------------------|--------------------|----------------------|
 | 10    | 1                 | 1                | 0.9130001          | 0.087736346          |
-| 10    | 1                 | 10               | 0.9779833          | 0.024727175          |   
+| 10    | 1                 | 10               | 0.9779833          | 0.024727175          |    -->
 
 ![](plots/cls_20.mbs_16.k_shot_1.inner_numstep_1.inner_updatelr_0.4.learn_inner_update_lr_False.mutual_exclusive_True.png)  
 *Figure 1 - Training and Validation plot for 20-way, 1-shot, batch_size=16, mutual-exclusive*  
@@ -26,14 +26,5 @@
 ![](plots/cls_20.mbs_16.k_shot_1.inner_numstep_1.inner_updatelr_0.4.learn_inner_update_lr_False.mutual_exclusive_False.png)  
 *Figure 2 - Training and Validation plot for 20-way, 1-shot, batch_size=16, non-mutual-exclusive*   
 
-![](plots/cls_10.mbs_16.k_shot_1.inner_numstep_1.inner_updatelr_0.4.learn_inner_update_lr_False.mutual_exclusive_True.png)  
-*Figure 3 - Training and Validation plot for 10-way, 1-shot, batch_size=16, mutual-exclusive*  
-
-![](plots/cls_10.mbs_16.k_shot_1.inner_numstep_1.inner_updatelr_0.4.learn_inner_update_lr_False.mutual_exclusive_False.png)  
-*Figure 4 - Training and Validation plot for 10-way, 1-shot, batch_size=16, non-mutual-exclusive*   
-
-![](plots/cls_5.mbs_16.k_shot_1.inner_numstep_1.inner_updatelr_0.4.learn_inner_update_lr_False.mutual_exclusive_True.png)  
-*Figure 5 - Training and Validation plot for 5-way, 1-shot, batch_size=16, mutual-exclusive*  
-
-![](plots/cls_5.mbs_16.k_shot_1.inner_numstep_1.inner_updatelr_0.4.learn_inner_update_lr_False.mutual_exclusive_False.png)  
-*Figure 6 - Training and Validation plot for 5-way, 1-shot, batch_size=16, non-mutual-exclusive*   
+![](plots/cls_5.mbs_4.k_shot_2.inner_numstep_1.inner_updatelr_0.4.learn_inner_update_lr_False.dataset_pose.mutual_exclusive_False.png)  
+*Figure 3 - Training and Validation mean-squared-error for 5-tasks, 2-shot, batch_size=4*  

@@ -39,6 +39,8 @@ if __name__ == '__main__':
     iteration = [] 
     task_train_metric_pre_optim, task_train_metric_post_optim, task_test_metric_pre_optim, task_test_metric_post_optim = [], [], [], []
 
+    # plot
+    metric = None
     with open(csv_file) as file:
         reader = csv.DictReader( file )
         for line in reader:
@@ -55,12 +57,14 @@ if __name__ == '__main__':
                 task_test_metric_post_optim.append(float(line['task_test_loss_post_optim']))
 
         if args.dataset == 'omniglot':
+            metric = 'Accuracy'
             # compute moving average
             task_train_metric_pre_optim_avg = moving_average(task_train_metric_pre_optim, 20)
             task_test_metric_pre_optim_avg = moving_average(task_test_metric_pre_optim, 20)
             task_train_metric_post_optim_avg = moving_average(task_train_metric_post_optim, 20)
             task_test_metric_post_optim_avg = moving_average(task_test_metric_post_optim, 20)
         else:
+            metric = 'Loss'
             # compute moving average
             task_train_metric_pre_optim_avg = moving_average(task_train_metric_pre_optim, 20)
             task_test_metric_pre_optim_avg = moving_average(task_test_metric_pre_optim, 20)
@@ -69,9 +73,7 @@ if __name__ == '__main__':
 
     # plot graphs    
     plt.subplot(2,1,1)
-    # plt.ylim(0.0, 1.0)
-    plt.subplot(2,1,1)
-    plt.title('Training Accuracy')
+    plt.title('Training {}'.format(metric))
     plt.grid()
     plt.xlabel('iteration')
     plt.plot(iteration, task_train_metric_pre_optim, alpha=0.3)
@@ -81,7 +83,7 @@ if __name__ == '__main__':
     plt.legend(legends)
 
     plt.subplot(2,1,2)
-    plt.title('Validation Accuracy')
+    plt.title('Validation {}'.format(metric))
     plt.grid()
     plt.xlabel('iteration')
     plt.plot(iteration, task_test_metric_pre_optim, alpha=0.3)
