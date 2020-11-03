@@ -30,7 +30,7 @@ class DataGenerator(object):
     self.img_size = config.get('img_size', (128, 128))
 
     self.dim_input = np.prod(self.img_size)
-    self.dim_output = 3
+    self.dim_output = 1
 
     # pickle file names
     train_pickle = os.path.join(data_folder, 'train_data.pkl')
@@ -88,7 +88,8 @@ class DataGenerator(object):
       y_ = self.test_y
       num_objects = self.num_meta_objects
       num_samples_per_object = self.num_meta_test_samples_per_object
-
+    y_ = y_[:,:,-1] # only the yaw angle. other two are constants
+    y_ = y_[..., np.newaxis]
     all_image_batches, all_label_batches = [], []
     for i in range(batch_size):
       task_indices = random.sample(range(X_.shape[0]), num_objects)
@@ -127,7 +128,7 @@ if __name__ == '__main__':
       for j in range(dgen.num_samples_per_object):
         plt.subplot(dgen.num_objects, dgen.num_samples_per_object, i*dgen.num_samples_per_object+j+1)
         plt.imshow(imgs[0, i, j], cmap='gray')
-        plt.title('pose=[{:.2f},{:.2f},{:.2f}]'.format(labels[0][i][j][0],labels[0][i][j][1],labels[0][i][j][2]))
+        plt.title('pose={:.2f}'.format(labels[0][i][j][0]))
 
   # get a meta testing batch
   imgs, labels = dgen.sample_batch(batch_type='meta_test', batch_size=4, shuffle=True)
@@ -141,5 +142,5 @@ if __name__ == '__main__':
       for j in range(dgen.num_meta_test_samples_per_object):
         plt.subplot(dgen.num_meta_objects, dgen.num_meta_test_samples_per_object, i*dgen.num_meta_test_samples_per_object+j+1)
         plt.imshow(imgs[0, i, j], cmap='gray')
-        plt.title('pose=[{:.2f},{:.2f},{:.2f}]'.format(labels[0][i][j][0],labels[0][i][j][1],labels[0][i][j][2]))
+        plt.title('pose={:.2f}'.format(labels[0][i][j][0]))
   plt.show()

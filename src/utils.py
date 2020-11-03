@@ -24,7 +24,7 @@ def parse_args():
                         help='number of samples per class')
     parser.add_argument('--meta_train_k_shot', type=int, default=-1,
                         help='number of samples per class during meta-training')
-    parser.add_argument('--inner_update_lr', type=float, default=0.4,
+    parser.add_argument('--inner_update_lr', type=float, default=0.04,
                         help='learning rate for inner update loop')
     parser.add_argument('--num_inner_updates', type=int, default=1,
                         help='number of inner updates per outer update')
@@ -48,7 +48,7 @@ def parse_args():
                         help='dataset', choices=['omniglot', 'pose'])
     parser.add_argument('--data_path', type=str, default='./datasets/omniglot_resized',
                         help='data path')
-    parser.add_argument('--meta_train_iterations', type=int, default=10000,
+    parser.add_argument('--meta_train_iterations', type=int, default=15000,
                         help='number of metatraining iterations')
     parser.add_argument('--mutual_exclusive', default=False, action='store_true',
                         help='whether or not to prepare data in a mutual exclusive manner')

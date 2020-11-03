@@ -46,8 +46,8 @@ def main(argv):
   random.shuffle(folders)
 
   metatrain_folders = folders[:-20]
-  metaval_folders = folders[-20:-15]
-  metatest_folders = folders[-15:]
+  metaval_folders = folders[-20:-10]
+  metatest_folders = folders[-10:]
 
   def normalize(labels_all):
     a1 = np.array(labels_all)

@@ -27,7 +27,7 @@ if __name__ == '__main__':
     
     # Plot the graphs
     exp_string = 'cls_'+str(args.n_way)+'.mbs_'+str(args.meta_train_batch_size) + '.k_shot_' + str(args.meta_train_k_shot) + \
-                    '.inner_numstep_' + str(args.num_inner_updates) + '.inner_updatelr_' + str(args.inner_update_lr) + \
+                    '.inner_numstep_' + str(args.num_inner_updates) + '.meta_lr_' + str(args.meta_lr) + '.inner_updatelr_' + str(args.inner_update_lr) + \
                     '.learn_inner_update_lr_' + str(args.learn_inner_update_lr) + '.dataset_' + str(args.dataset) + \
                     '.mutual_exclusive_' + str(args.mutual_exclusive)
     csv_file = '{}/{}.csv'.format(args.logdir, exp_string)

@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 from functools import partial
+import math as m
 
 ## Loss utilities
 def cross_entropy_loss(pred, label, k_shot):
@@ -13,17 +14,26 @@ def accuracy(labels, predictions):
 def l2_loss(pred, label):
     return tf.cast((tf.nn.l2_loss(pred - label) / label.shape[0] * label.shape[1]), dtype=tf.float32)
 
+def denormalize_pose(pose):
+    return pose * 2.0 * m.pi
+
+def mse(pred, label):
+  pred = tf.reshape(pred, [-1])
+  label = tf.reshape(label, [-1])
+  return tf.reduce_mean(tf.square(pred - label))
+
 """Convolutional layers used by MAML model."""
 ## NOTE: You do not need to modify this block but you will need to use it.
 seed = 123
-def conv_block(inp, cweight, bweight, bn, activation=tf.nn.relu, stride=1):
+def conv_block(inp, cweight, bweight, bn=None, activation=tf.nn.relu, stride=1):
     """ Perform, conv, batch norm, nonlinearity, and max pool """
     strides = [1,stride,stride,1]
 
     conv_output = tf.nn.conv2d(input=inp, filters=cweight, strides=strides, padding='SAME') + bweight
-    normed = bn(conv_output)
-    normed = activation(normed)
-    return normed
+    if bn is not None:
+        conv_output = bn(conv_output)
+    conv_output = activation(conv_output)
+    return conv_output
 
 class ConvLayers(tf.keras.layers.Layer):
     def __init__(self, channels, dim_hidden, dim_output, img_size):
@@ -64,23 +74,93 @@ class ConvLayers(tf.keras.layers.Layer):
         hidden4 = conv_block(hidden3, weights['conv4'], weights['b4'], self.bn4, stride=1)
         hidden4 = tf.reduce_mean(input_tensor=hidden4, axis=[1, 2])
         return tf.matmul(hidden4, weights['w5']) + weights['b5']
-    
+
+class MAMLVanillaConvLayers(tf.keras.layers.Layer):
+    """Construct conv weights."""
+    def __init__(self, channels, dim_hidden, dim_output, img_size):
+        super(MAMLVanillaConvLayers, self).__init__()
+        self.channels = channels
+        self.dim_hidden = dim_hidden
+        self.dim_output = dim_output
+        self.img_size = img_size
+
+        weights = {}
+
+        dtype = tf.float32
+        weight_initializer =  tf.keras.initializers.GlorotUniform()
+        k = 3
+        weights['en_conv1'] = tf.Variable(weight_initializer(shape=[3, 3, 1, 32]), name='en_conv1', dtype=dtype)
+        weights['en_bias1'] = tf.Variable(tf.zeros([32]), name='en_bias1')
+
+        weights['en_conv2'] = tf.Variable(weight_initializer(shape=[3, 3, 32, 48]), name='en_conv2', dtype=dtype)
+        weights['en_bias2'] = tf.Variable(tf.zeros([48]), name='en_bias2')
+
+        weights['en_conv3'] = tf.Variable(weight_initializer(shape=[3, 3, 48, 64]), name='en_conv3', dtype=dtype)
+        weights['en_bias3'] = tf.Variable(tf.zeros([64]), name='en_bias3')
+
+        weights['en_full1'] = tf.Variable(weight_initializer(shape=[4096, 196]), name='en_full1', dtype=dtype)
+        weights['en_bias_full1'] = tf.Variable(tf.zeros([196]), name='en_bias_full1')
+        self.flatten_layer = tf.keras.layers.Flatten(name="en_flatten")
+
+        weights['conv1'] = tf.Variable(weight_initializer(shape=[k, k, self.channels, self.dim_hidden]), name='conv1', dtype=dtype)
+        weights['b1'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b1')
+        self.bn1 = tf.keras.layers.BatchNormalization(name='bn1')
+        weights['conv2'] = tf.Variable(weight_initializer(shape=[k, k, self.dim_hidden, self.dim_hidden]), name='conv2', dtype=dtype)
+        weights['b2'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b2')
+        self.bn2 = tf.keras.layers.BatchNormalization(name='bn2')
+        weights['conv3'] = tf.Variable(weight_initializer(shape=[k, k, self.dim_hidden, self.dim_hidden]), name='conv3', dtype=dtype)
+        weights['b3'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b3')
+        self.bn3 = tf.keras.layers.BatchNormalization(name='bn3')
+        weights['conv4'] = tf.Variable(weight_initializer([k, k, self.dim_hidden, self.dim_hidden]), name='conv4', dtype=dtype)
+        weights['b4'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b4')
+        self.bn4 = tf.keras.layers.BatchNormalization(name='bn4')
+        weights['w5'] = tf.Variable(weight_initializer(shape=[self.dim_hidden, self.dim_output]), name='w5', dtype=dtype)
+        weights['b5'] = tf.Variable(tf.zeros([self.dim_output]), name='b5')
+
+        self.conv_weights = weights
+
+    def call(self, inp, weights):
+        """Forward conv."""
+        # reuse is for the normalization parameters.
+        channels = self.channels
+        inp = tf.reshape(inp, [-1, self.img_size, self.img_size, channels])
+        en1 = conv_block(inp, weights['en_conv1'], weights['en_bias1'], stride=2)
+        en2 = conv_block(en1, weights['en_conv2'], weights['en_bias2'], stride=2)
+        pool1 = tf.nn.max_pool(en2, 2, 2, 'VALID')
+
+        en3 = conv_block(pool1, weights['en_conv3'], weights['en_bias3'], stride=2)
+        out0 = self.flatten_layer(en3)
+        out1 = tf.nn.relu(
+            tf.matmul(out0, weights['en_full1']) + weights['en_bias_full1'])
+
+        out1 = tf.reshape(out1, [-1, 14, 14, 1])
+
+        hidden1 = conv_block(out1, weights['conv1'], weights['b1'], self.bn1, stride=1)
+        hidden2 = conv_block(hidden1, weights['conv2'], weights['b2'], self.bn2, stride=1)
+        hidden3 = conv_block(hidden2, weights['conv3'], weights['b3'], self.bn3, stride=1)
+        hidden4 = conv_block(hidden3, weights['conv4'], weights['b4'], self.bn4, stride=1)
+
+        # last hidden layer is 6x6x64-ish, reshape to a vector
+        hidden4 = tf.reduce_mean(hidden4, [1, 2])
+        # ipdb.set_trace()
+        return tf.matmul(hidden4, weights['w5']) + weights['b5']
+
 """MAML model code"""
 class MAML(tf.keras.Model):
     def __init__(self, dim_input=1, dim_output=1,
                num_inner_updates=1,
                inner_update_lr=0.4, num_filters=32, k_shot=5, learn_inner_update_lr=False,
-               loss_func='cross_entropy'):
+               dataset='omniglot'):
         super(MAML, self).__init__()
         self.dim_input = dim_input
         self.dim_output = dim_output
         self.inner_update_lr = inner_update_lr
-        self.loss_func_ = loss_func
+        self.dataset = dataset
 
-        if self.loss_func_ == 'cross_entropy':
+        if dataset == 'omniglot':
             self.loss_func = partial(cross_entropy_loss, k_shot=k_shot)
-        elif self.loss_func_ == 'mse':
-            self.loss_func = partial(l2_loss)
+        elif dataset == 'pose':
+            self.loss_func = partial(mse)
         self.dim_hidden = num_filters
         self.channels = 1
         self.img_size = int(np.sqrt(self.dim_input/self.channels))
@@ -96,7 +176,10 @@ class MAML(tf.keras.Model):
         # Define the weights - these should NOT be directly modified by the
         # inner training loop
         tf.random.set_seed(seed)
-        self.conv_layers = ConvLayers(self.channels, self.dim_hidden, self.dim_output, self.img_size)
+        if dataset == 'omniglot':
+            self.conv_layers = ConvLayers(self.channels, self.dim_hidden, self.dim_output, self.img_size)
+        elif dataset == 'pose':
+            self.conv_layers = MAMLVanillaConvLayers(self.channels, self.dim_hidden, self.dim_output, self.img_size)
 
         self.learn_inner_update_lr = learn_inner_update_lr
         if self.learn_inner_update_lr:
@@ -153,7 +236,10 @@ class MAML(tf.keras.Model):
                     # get logits for training data
                     logits_tr = self.conv_layers(input_tr, weights_optimized)
                     # compute training loss 
-                    loss_tr_j = self.loss_func(logits_tr, label_tr)
+                    if self.dataset == 'omniglot':
+                        loss_tr_j = self.loss_func(logits_tr, label_tr)
+                    elif self.dataset == 'pose':
+                        loss_tr_j = self.loss_func(denormalize_pose(logits_tr), denormalize_pose(label_tr))
 
                     # pre-optimization output and accuracy
                     if (task_output_tr_pre is None) and (task_loss_tr_pre is None) and (task_accuracy_tr_pre is None):
@@ -162,7 +248,7 @@ class MAML(tf.keras.Model):
                         # Compute losses from output predictions
                         task_loss_tr_pre = loss_tr_j
 
-                        if self.loss_func_ == 'cross_entropy':
+                        if self.dataset == 'omniglot':
                             # Compute accuracies from output predictions
                             task_accuracy_tr_pre = accuracy(tf.argmax(input=label_tr, axis=1), tf.argmax(input=tf.nn.softmax(task_output_tr_pre), axis=1))
                         else:
@@ -186,7 +272,10 @@ class MAML(tf.keras.Model):
                     # compute logits for test data
                     logits_ts = self.conv_layers(input_ts, weights_optimized)
                     # compute loss 
-                    loss_ts_j = self.loss_func(logits_ts, label_ts)
+                    if self.dataset == 'omniglot':
+                        loss_ts_j = self.loss_func(logits_ts, label_ts)
+                    elif self.dataset == 'pose':
+                        loss_ts_j = self.loss_func(denormalize_pose(logits_ts), denormalize_pose(label_ts))
                     # add to the task output list
                     task_outputs_ts.append(logits_ts)
                     # compute task loss on test data
@@ -194,7 +283,7 @@ class MAML(tf.keras.Model):
 
             # compute accuracies after inner update step
             for j in range(num_inner_updates):
-                if self.loss_func_ == 'cross_entropy':
+                if self.dataset == 'omniglot':
                     task_accuracies_ts.append(accuracy(tf.argmax(input=label_ts, axis=1), tf.argmax(input=tf.nn.softmax(task_outputs_ts[j]), axis=1)))
                 else:
                     task_accuracies_ts.append(0.0)

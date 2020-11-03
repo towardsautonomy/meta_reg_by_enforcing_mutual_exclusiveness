@@ -179,11 +179,11 @@ NUM_META_TEST_POINTS = 600
 
 # meta testing function
 def meta_test_fn(model, data_generator, n_way=10, meta_batch_size=25, k_shot=1,
-              num_inner_updates=1):
+              num_inner_updates=1, dataset='omniglot'):
     np.random.seed(1)
     random.seed(1)
 
-    meta_test_accuracies = []
+    meta_test_losses, meta_test_accuracies = [], []
 
     for _ in range(NUM_META_TEST_POINTS):
         # sample a batch of test data and partition into
@@ -199,11 +199,19 @@ def meta_test_fn(model, data_generator, n_way=10, meta_batch_size=25, k_shot=1,
         inp = (input_tr, input_ts, label_tr, label_ts)
         result = outer_eval_step(inp, model, meta_batch_size=meta_batch_size, num_inner_updates=num_inner_updates)
 
-        meta_test_accuracies.append(result[-1][-1])
+        if dataset == 'omniglot':
+            meta_test_accuracies.append(result[-1][-1])
+        elif dataset == 'pose':
+            meta_test_losses.append(result[-3][-1])
 
-    meta_test_accuracies = np.array(meta_test_accuracies)
-    means = np.mean(meta_test_accuracies)
-    stds = np.std(meta_test_accuracies)
+    meta_test_metrics = None
+    if dataset == 'omniglot':
+        meta_test_metrics = np.array(meta_test_accuracies)
+    elif dataset == 'pose':
+        meta_test_metrics = np.array(meta_test_losses)
+
+    means = np.mean(meta_test_metrics)
+    stds = np.std(meta_test_metrics)
     ci95 = 1.96*stds/np.sqrt(NUM_META_TEST_POINTS)
 
     print('Mean meta-test accuracy/loss, stddev, and confidence intervals')
@@ -242,7 +250,7 @@ def run_maml(n_way=10, k_shot=1, meta_batch_size=25, meta_lr=0.001,
               k_shot=k_shot,
               num_filters=num_filters,
               learn_inner_update_lr=learn_inner_update_lr,
-              loss_func=loss_func_)
+              dataset=dataset)
 
     if meta_train_k_shot == -1:
         meta_train_k_shot = k_shot
@@ -250,9 +258,10 @@ def run_maml(n_way=10, k_shot=1, meta_batch_size=25, meta_lr=0.001,
         meta_train_inner_update_lr = inner_update_lr
 
     exp_string = 'cls_'+str(n_way)+'.mbs_'+str(meta_train_batch_size) + '.k_shot_' + str(meta_train_k_shot) + \
-                '.inner_numstep_' + str(num_inner_updates) + '.inner_updatelr_' + str(meta_train_inner_update_lr) + \
+                '.inner_numstep_' + str(num_inner_updates) + '.meta_lr_' + str(meta_lr) + '.inner_updatelr_' + str(meta_train_inner_update_lr) + \
                 '.learn_inner_update_lr_' + str(learn_inner_update_lr)  + '.dataset_' + str(dataset) + \
                 '.mutual_exclusive_' + str(mutual_exclusive)
+
     logfile = exp_string+'.csv'
 
     if meta_train:
@@ -266,4 +275,4 @@ def run_maml(n_way=10, k_shot=1, meta_batch_size=25, meta_lr=0.001,
         print("Restoring model weights from ", model_file)
         model.load_weights(model_file)
 
-        meta_test_fn(model, data_generator, n_way, meta_batch_size, k_shot, num_inner_updates)
+        meta_test_fn(model, data_generator, n_way, meta_batch_size, k_shot, num_inner_updates, dataset=dataset)

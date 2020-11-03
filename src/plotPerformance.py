@@ -16,10 +16,13 @@ if __name__ == '__main__':
         args.meta_train_k_shot = args.k_shot
     if args.meta_train_batch_size == -1:
         args.meta_train_batch_size = args.meta_batch_size
+
+    # number of iterations to plot
+    n_iterations = 15000
     
     # Plot the graphs
     exp_string = 'cls_'+str(args.n_way)+'.mbs_'+str(args.meta_train_batch_size) + '.k_shot_' + str(args.meta_train_k_shot) + \
-                    '.inner_numstep_' + str(args.num_inner_updates) + '.inner_updatelr_' + str(args.inner_update_lr) + \
+                    '.inner_numstep_' + str(args.num_inner_updates) + '.meta_lr_' + str(args.meta_lr) + '.inner_updatelr_' + str(args.inner_update_lr) + \
                     '.learn_inner_update_lr_' + str(args.learn_inner_update_lr) + '.dataset_' + str(args.dataset) + \
                     '.mutual_exclusive_' + str(args.mutual_exclusive)
     csv_file = '{}/{}.csv'.format(args.logdir, exp_string)
@@ -44,6 +47,8 @@ if __name__ == '__main__':
     with open(csv_file) as file:
         reader = csv.DictReader( file )
         for line in reader:
+            if int(line['iter']) > n_iterations:
+                break
             iteration.append(int(line['iter']))
             if args.dataset == 'omniglot':
                 task_train_metric_pre_optim.append(float(line['task_train_acc_pre_optim']))
@@ -73,6 +78,8 @@ if __name__ == '__main__':
 
     # plot graphs    
     plt.subplot(2,1,1)
+    if args.dataset == 'omniglot':
+        plt.ylim(0, 1)
     plt.title('Training {}'.format(metric))
     plt.grid()
     plt.xlabel('iteration')
@@ -83,6 +90,8 @@ if __name__ == '__main__':
     plt.legend(legends)
 
     plt.subplot(2,1,2)
+    if args.dataset == 'omniglot':
+        plt.ylim(0, 1)
     plt.title('Validation {}'.format(metric))
     plt.grid()
     plt.xlabel('iteration')
