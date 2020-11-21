@@ -18,13 +18,14 @@ if __name__ == '__main__':
         args.meta_train_batch_size = args.meta_batch_size
 
     # number of iterations to plot
-    n_iterations = 15000
+    n_iterations = 2200
     
     # Plot the graphs
     exp_string = 'cls_'+str(args.n_way)+'.mbs_'+str(args.meta_train_batch_size) + '.k_shot_' + str(args.meta_train_k_shot) + \
                     '.inner_numstep_' + str(args.num_inner_updates) + '.meta_lr_' + str(args.meta_lr) + '.inner_updatelr_' + str(args.inner_update_lr) + \
                     '.learn_inner_update_lr_' + str(args.learn_inner_update_lr) + '.dataset_' + str(args.dataset) + \
-                    '.mutual_exclusive_' + str(args.mutual_exclusive)
+                    '.mutual_exclusive_' + str(args.mutual_exclusive) + '.metareg_' + str(args.metareg) + \
+                    '.lambda_' + str(args.metareg_lambda) + '.tau_' + str(args.metareg_tau)
     csv_file = '{}/{}.csv'.format(args.logdir, exp_string)
 
     legends = ['pre-optimization raw plot',

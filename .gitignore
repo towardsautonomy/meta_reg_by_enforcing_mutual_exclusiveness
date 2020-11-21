@@ -8,4 +8,7 @@ pose_data/mjkey.txt
 datasets/
 !datasets/omniglot_resized/labels
 !datasets/pascal3d_pose
+plots
+logs
+
 *.pkl

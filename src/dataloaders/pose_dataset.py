@@ -6,6 +6,9 @@ import imageio
 import pickle
 import matplotlib.pyplot as plt
 
+np.random.seed(42)
+random.seed(42)
+
 class DataGenerator(object):
   """
   Data Generator capable of generating batches of Omniglot data.

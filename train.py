@@ -23,13 +23,14 @@ if __name__ == '__main__':
                  meta_train_batch_size=args.meta_train_batch_size, learn_inner_update_lr=args.learn_inner_update_lr, modeldir=args.modeldir,  
                  logdir=args.logdir, dataset=args.dataset, data_path=args.data_path, meta_train=True,
                  meta_train_iterations=args.meta_train_iterations, meta_train_k_shot=args.meta_train_k_shot,
-                 mutual_exclusive=args.mutual_exclusive)
+                 mutual_exclusive=args.mutual_exclusive, metareg=args.metareg, metareg_lambda=args.metareg_lambda, metareg_tau=args.metareg_tau)
     
     # Plot the graphs
     exp_string = 'cls_'+str(args.n_way)+'.mbs_'+str(args.meta_train_batch_size) + '.k_shot_' + str(args.meta_train_k_shot) + \
                     '.inner_numstep_' + str(args.num_inner_updates) + '.meta_lr_' + str(args.meta_lr) + '.inner_updatelr_' + str(args.inner_update_lr) + \
                     '.learn_inner_update_lr_' + str(args.learn_inner_update_lr) + '.dataset_' + str(args.dataset) + \
-                    '.mutual_exclusive_' + str(args.mutual_exclusive)
+                    '.mutual_exclusive_' + str(args.mutual_exclusive) + '.metareg_' + str(args.metareg) + \
+                    '.lambda_' + str(args.metareg_lambda) + '.tau_' + str(args.metareg_tau)
     csv_file = '{}/{}.csv'.format(args.logdir, exp_string)
 
     legends = ['pre-optimization raw plot',

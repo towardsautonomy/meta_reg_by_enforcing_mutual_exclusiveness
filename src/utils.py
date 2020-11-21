@@ -52,5 +52,11 @@ def parse_args():
                         help='number of metatraining iterations')
     parser.add_argument('--mutual_exclusive', default=False, action='store_true',
                         help='whether or not to prepare data in a mutual exclusive manner')
+    parser.add_argument('--metareg', default=False, action='store_true',
+                        help='whether or not to use meta-regularization')
+    parser.add_argument('--metareg_lambda', type=float, default=0.1,
+                        help='Lambda used for meta-regularization')
+    parser.add_argument('--metareg_tau', type=float, default=1.0,
+                        help='Tau used for meta-regularization')
 
     return parser.parse_args()

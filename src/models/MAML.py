@@ -2,7 +2,6 @@ import sys
 import numpy as np
 import tensorflow as tf
 from functools import partial
-import math as m
 
 ## Loss utilities
 def cross_entropy_loss(pred, label, k_shot):
@@ -14,13 +13,10 @@ def accuracy(labels, predictions):
 def l2_loss(pred, label):
     return tf.cast((tf.nn.l2_loss(pred - label) / label.shape[0] * label.shape[1]), dtype=tf.float32)
 
-def denormalize_pose(pose):
-    return pose * 2.0 * m.pi
-
 def mse(pred, label):
-  pred = tf.reshape(pred, [-1])
-  label = tf.reshape(label, [-1])
-  return tf.reduce_mean(tf.square(pred - label))
+    pred = tf.reshape(pred, [-1])
+    label = tf.reshape(label, [-1])
+    return tf.reduce_mean(tf.square(pred - label))
 
 """Convolutional layers used by MAML model."""
 ## NOTE: You do not need to modify this block but you will need to use it.
@@ -35,9 +31,9 @@ def conv_block(inp, cweight, bweight, bn=None, activation=tf.nn.relu, stride=1):
     conv_output = activation(conv_output)
     return conv_output
 
-class ConvLayers(tf.keras.layers.Layer):
+class ConvDeepLayers(tf.keras.layers.Layer):
     def __init__(self, channels, dim_hidden, dim_output, img_size):
-        super(ConvLayers, self).__init__()
+        super(ConvDeepLayers, self).__init__()
         self.channels = channels
         self.dim_hidden = dim_hidden
         self.dim_output = dim_output
@@ -49,6 +45,15 @@ class ConvLayers(tf.keras.layers.Layer):
         weight_initializer =  tf.keras.initializers.GlorotUniform()
         k = 3
 
+        # encoder
+        weights['en_conv1'] = tf.Variable(weight_initializer(shape=[k, k, self.channels, self.dim_hidden]), name='en_conv1', dtype=dtype)
+        weights['en_b1'] = tf.Variable(tf.zeros([self.dim_hidden]), name='en_b1')
+        weights['en_conv2'] = tf.Variable(weight_initializer(shape=[k, k, self.dim_hidden, self.dim_hidden]), name='en_conv2', dtype=dtype)
+        weights['en_b2'] = tf.Variable(tf.zeros([self.dim_hidden]), name='en_b3')
+        weights['en_conv3'] = tf.Variable(weight_initializer(shape=[k, k, self.dim_hidden, self.dim_hidden]), name='en_conv3', dtype=dtype)
+        weights['en_b3'] = tf.Variable(tf.zeros([self.dim_hidden]), name='en_b3')
+
+        # tail layers
         weights['conv1'] = tf.Variable(weight_initializer(shape=[k, k, self.channels, self.dim_hidden]), name='conv1', dtype=dtype)
         weights['b1'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b1')
         self.bn1 = tf.keras.layers.BatchNormalization(name='bn1')
@@ -68,9 +73,53 @@ class ConvLayers(tf.keras.layers.Layer):
     def call(self, inp, weights):
         channels = self.channels
         inp = tf.reshape(inp, [-1, self.img_size, self.img_size, channels])
-        hidden1 = conv_block(inp, weights['conv1'], weights['b1'], self.bn1, stride=1)
+        en1 = conv_block(inp, weights['en_conv1'], weights['en_b1'], stride=1)
+        en2 = conv_block(en1, weights['en_conv2'], weights['en_b2'], stride=1)
+        en3 = conv_block(en2, weights['en_conv3'], weights['en_b3'], stride=1)
+
+        hidden1 = conv_block(en3, weights['conv1'], weights['b1'], self.bn1, stride=1)
         hidden2 = conv_block(hidden1, weights['conv2'], weights['b2'], self.bn2, stride=2)
         hidden3 = conv_block(hidden2, weights['conv3'], weights['b3'], self.bn3, stride=2)
+        hidden4 = conv_block(hidden3, weights['conv4'], weights['b4'], self.bn4, stride=1)
+        hidden4 = tf.reduce_mean(input_tensor=hidden4, axis=[1, 2])
+        return tf.matmul(hidden4, weights['w5']) + weights['b5']
+
+class ConvLayers(tf.keras.layers.Layer):
+    def __init__(self, channels, dim_hidden, dim_output, img_size):
+        super(ConvLayers, self).__init__()
+        self.channels = channels
+        self.dim_hidden = dim_hidden
+        self.dim_output = dim_output
+        self.img_size = img_size
+
+        weights = {}
+
+        dtype = tf.float32
+        weight_initializer =  tf.keras.initializers.GlorotUniform()
+        k = 3
+
+        weights['conv1'] = tf.Variable(weight_initializer(shape=[k, k, self.channels, self.dim_hidden]), name='conv1', dtype=dtype)
+        weights['b1'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b1')
+        self.bn1 = tf.keras.layers.BatchNormalization(name='bn1')
+        weights['conv2'] = tf.Variable(weight_initializer(shape=[k, k, self.dim_hidden, self.dim_hidden]), name='conv2', dtype=dtype)
+        weights['b2'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b2')
+        self.bn2 = tf.keras.layers.BatchNormalization(name='bn2')
+        weights['conv3'] = tf.Variable(weight_initializer(shape=[k, k, self.dim_hidden, self.dim_hidden]), name='conv3', dtype=dtype)
+        weights['b3'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b3')
+        self.bn3 = tf.keras.layers.BatchNormalization(name='bn3')
+        weights['conv4'] = tf.Variable(weight_initializer([k, k, self.dim_hidden, self.dim_hidden]), name='conv4', dtype=dtype)
+        weights['b4'] = tf.Variable(tf.zeros([self.dim_hidden]), name='b4')
+        self.bn4 = tf.keras.layers.BatchNormalization(name='bn4')
+        weights['w5'] = tf.Variable(weight_initializer(shape=[self.dim_hidden, self.dim_output]), name='w5', dtype=dtype)
+        weights['b5'] = tf.Variable(tf.zeros([self.dim_output]), name='b5')
+        self.conv_weights = weights
+
+    def call(self, inp, weights):
+        channels = self.channels
+        inp = tf.reshape(inp, [-1, self.img_size, self.img_size, channels])
+        hidden1 = conv_block(inp, weights['conv1'], weights['b1'], self.bn1, stride=1)
+        hidden2 = conv_block(hidden1, weights['conv2'], weights['b2'], self.bn2, stride=1)
+        hidden3 = conv_block(hidden2, weights['conv3'], weights['b3'], self.bn3, stride=1)
         hidden4 = conv_block(hidden3, weights['conv4'], weights['b4'], self.bn4, stride=1)
         hidden4 = tf.reduce_mean(input_tensor=hidden4, axis=[1, 2])
         return tf.matmul(hidden4, weights['w5']) + weights['b5']
@@ -177,7 +226,7 @@ class MAML(tf.keras.Model):
         # inner training loop
         tf.random.set_seed(seed)
         if dataset == 'omniglot':
-            self.conv_layers = ConvLayers(self.channels, self.dim_hidden, self.dim_output, self.img_size)
+            self.conv_layers = ConvDeepLayers(self.channels, self.dim_hidden, self.dim_output, self.img_size)
         elif dataset == 'pose':
             self.conv_layers = MAMLVanillaConvLayers(self.channels, self.dim_hidden, self.dim_output, self.img_size)
 
@@ -236,10 +285,7 @@ class MAML(tf.keras.Model):
                     # get logits for training data
                     logits_tr = self.conv_layers(input_tr, weights_optimized)
                     # compute training loss 
-                    if self.dataset == 'omniglot':
-                        loss_tr_j = self.loss_func(logits_tr, label_tr)
-                    elif self.dataset == 'pose':
-                        loss_tr_j = self.loss_func(denormalize_pose(logits_tr), denormalize_pose(label_tr))
+                    loss_tr_j = self.loss_func(logits_tr, label_tr)
 
                     # pre-optimization output and accuracy
                     if (task_output_tr_pre is None) and (task_loss_tr_pre is None) and (task_accuracy_tr_pre is None):
@@ -272,14 +318,20 @@ class MAML(tf.keras.Model):
                     # compute logits for test data
                     logits_ts = self.conv_layers(input_ts, weights_optimized)
                     # compute loss 
-                    if self.dataset == 'omniglot':
-                        loss_ts_j = self.loss_func(logits_ts, label_ts)
-                    elif self.dataset == 'pose':
-                        loss_ts_j = self.loss_func(denormalize_pose(logits_ts), denormalize_pose(label_ts))
+                    loss_ts_j = self.loss_func(logits_ts, label_ts)
                     # add to the task output list
                     task_outputs_ts.append(logits_ts)
                     # compute task loss on test data
                     task_losses_ts.append(loss_ts_j)
+
+            task_en_params_flattened = []
+            task_tail_params_flattened = []
+            for key in weights_optimized.keys():
+                if 'en' not in key: # get layers beyond encoder
+                    task_tail_params_flattened.extend([tf.reshape(weights_optimized[key], [-1])])
+                else: # get encoder layers
+                    task_en_params_flattened.extend([tf.reshape(weights_optimized[key], [-1])])
+            task_params_flattened = [task_en_params_flattened, task_tail_params_flattened]
 
             # compute accuracies after inner update step
             for j in range(num_inner_updates):
@@ -288,7 +340,7 @@ class MAML(tf.keras.Model):
                 else:
                     task_accuracies_ts.append(0.0)
 
-            task_output = [task_output_tr_pre, task_outputs_ts, task_loss_tr_pre, task_losses_ts, task_accuracy_tr_pre, task_accuracies_ts]
+            task_output = [task_output_tr_pre, task_outputs_ts, task_loss_tr_pre, task_losses_ts, task_accuracy_tr_pre, task_accuracies_ts, task_params_flattened]
             return task_output
 
         input_tr, input_ts, label_tr, label_ts = inp
@@ -300,11 +352,29 @@ class MAML(tf.keras.Model):
                               meta_batch_size,
                               num_inner_updates)
         
+        # data type for the model
+        model_en_params_dtype = []
+        model_tail_params_dtype = []
+        for key in self.conv_layers.conv_weights.keys():
+            if 'en' not in key: # get layers beyond encoder
+                model_tail_params_dtype.extend([tf.reshape(self.conv_layers.conv_weights[key], [-1])])
+            else: # get encoder layers
+                model_en_params_dtype.extend([tf.reshape(self.conv_layers.conv_weights[key], [-1])])
+        model_en_params_dtype = [tf.float32]*len(model_en_params_dtype)
+        model_tail_params_dtype = [tf.float32]*len(model_tail_params_dtype)
+        model_params_dtype = [model_en_params_dtype, model_tail_params_dtype]
+
+
+        # define output data type
         out_dtype = [tf.float32, [tf.float32]*num_inner_updates, tf.float32, [tf.float32]*num_inner_updates]
-        out_dtype.extend([tf.float32, [tf.float32]*num_inner_updates])
+        out_dtype.extend([tf.float32, [tf.float32]*num_inner_updates, model_params_dtype])
+
+        # define inner loop function
         task_inner_loop_partial = partial(task_inner_loop, meta_batch_size=meta_batch_size, num_inner_updates=num_inner_updates)
+        
         result = tf.map_fn(task_inner_loop_partial,
                         elems=(input_tr, input_ts, label_tr, label_ts),
                         dtype=out_dtype,
                         parallel_iterations=meta_batch_size)
+
         return result
