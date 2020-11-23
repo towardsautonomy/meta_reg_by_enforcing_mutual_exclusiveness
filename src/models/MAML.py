@@ -2,7 +2,11 @@ import sys
 import numpy as np
 import tensorflow as tf
 from functools import partial
+import math as m
 
+def denormalize_pose(pose):
+    return pose * 2.0 * m.pi
+    
 ## Loss utilities
 def cross_entropy_loss(pred, label, k_shot):
     return tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits=pred, labels=tf.stop_gradient(label)) / k_shot)
@@ -11,9 +15,13 @@ def accuracy(labels, predictions):
     return tf.reduce_mean(tf.cast(tf.equal(labels, predictions), dtype=tf.float32))
 
 def l2_loss(pred, label):
-    return tf.cast((tf.nn.l2_loss(pred - label) / label.shape[0] * label.shape[1]), dtype=tf.float32)
+    pred = denormalize_pose(pred)
+    label = denormalize_pose(label)
+    return tf.cast((tf.nn.l2_loss(pred - label) / (label.shape[0] * label.shape[1])), dtype=tf.float32)
 
 def mse(pred, label):
+    pred = denormalize_pose(pred)
+    label = denormalize_pose(label)
     pred = tf.reshape(pred, [-1])
     label = tf.reshape(label, [-1])
     return tf.reduce_mean(tf.square(pred - label))

@@ -7,7 +7,6 @@ import csv
 import pickle
 import tensorflow as tf
 import datetime
-import math as m
 from src.models import MAML
 from src.dataloaders import OmniglotDataGenerator, OmniglotDataGeneratorMutExclusive, PoseDataGenerator
 
@@ -22,9 +21,6 @@ if gpus:
             tf.config.experimental.set_memory_growth(gpu, True)
     except RuntimeError as e:
         print('ERROR: {}'.format(e))
-
-def denormalize_pose(pose):
-    return pose * 360.0
 
 # outer training loop 
 def outer_train_step(inp, model, optim, meta_batch_size=25, num_inner_updates=1, metareg=True, 
@@ -227,8 +223,8 @@ def meta_train_fn(model, exp_string, data_generator,
 
                     pre_losses, post_losses, pre_accuracies, post_accuracies = [], [], [], []
                 elif dataset == 'pose':
-                    task_train_loss_pre_optim = denormalize_pose(np.mean(pre_losses))
-                    task_train_loss_post_optim = denormalize_pose(np.mean(post_losses))
+                    task_train_loss_pre_optim = np.mean(pre_losses)
+                    task_train_loss_post_optim = np.mean(post_losses)
                     print_str = 'Iteration %d: pre-inner-loop train loss: %.5f, post-inner-loop test loss: %.5f' % (itr, np.mean(task_train_loss_pre_optim), np.mean(task_train_loss_post_optim))
                     print(print_str)
 
@@ -270,8 +266,8 @@ def meta_train_fn(model, exp_string, data_generator,
                         tf.summary.scalar('val/acc_pre_optim', task_test_acc_pre_optim, step=itr)
                         tf.summary.scalar('val/acc_post_optim', task_test_acc_post_optim, step=itr)
                 elif dataset == 'pose':
-                    task_test_loss_pre_optim = denormalize_pose(result[2].numpy())
-                    task_test_loss_post_optim = denormalize_pose(result[-4][-1].numpy())
+                    task_test_loss_pre_optim = result[2].numpy()
+                    task_test_loss_post_optim = result[-4][-1].numpy()
                     print('Meta-validation pre-inner-loop train loss: %.5f, meta-validation post-inner-loop test loss: %.5f' % (task_test_loss_pre_optim, task_test_loss_post_optim))
 
                     # write scalars to tensorboard
@@ -332,7 +328,7 @@ def meta_test_fn(model, data_generator, n_way=10, meta_batch_size=25, k_shot=1,
         if dataset == 'omniglot':
             meta_test_accuracies.append(result[-2][-1])
         elif dataset == 'pose':
-            meta_test_losses.append(denormalize_pose(result[-4][-1]))
+            meta_test_losses.append(result[-4][-1])
 
     meta_test_metrics = None
     if dataset == 'omniglot':

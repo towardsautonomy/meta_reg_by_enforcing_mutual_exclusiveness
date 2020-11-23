@@ -18,7 +18,7 @@ if __name__ == '__main__':
         args.meta_train_batch_size = args.meta_batch_size
 
     # number of iterations to plot
-    n_iterations = 2200
+    n_iterations = 3000
     
     # Plot the graphs
     exp_string = 'cls_'+str(args.n_way)+'.mbs_'+str(args.meta_train_batch_size) + '.k_shot_' + str(args.meta_train_k_shot) + \
