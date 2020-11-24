@@ -24,7 +24,7 @@ if gpus:
 
 # outer training loop 
 def outer_train_step(inp, model, optim, meta_batch_size=25, num_inner_updates=1, metareg=True, 
-                        metareg_lambda=0.1, metareg_tau=1.0):
+                        metareg_lambda=0.1, metareg_eta=1.0):
     with tf.GradientTape(persistent=False) as outer_tape:
         result = model(inp, meta_batch_size=meta_batch_size, num_inner_updates=num_inner_updates)
 
@@ -56,7 +56,7 @@ def outer_train_step(inp, model, optim, meta_batch_size=25, num_inner_updates=1,
             # add regularization term
             # enforce encoder weights to be similar and later layers to be different
             data_to_task_dist_ratio = (task_tail_params_dist_mean / tf.math.maximum(task_en_params_dist_mean, 1e-4))
-            reg_loss = tf.nn.l2_loss((data_to_task_dist_ratio - metareg_tau))
+            reg_loss = tf.nn.l2_loss((data_to_task_dist_ratio - metareg_eta))
             total_regularized_loss = total_losses_ts[-1] + (metareg_lambda * reg_loss)
 
             # total_regularized_loss = total_losses_ts[-1] - (metareg_lambda * task_tail_params_dist_mean)
@@ -117,7 +117,7 @@ def meta_train_fn(model, exp_string, data_generator,
                    n_way=10, meta_train_iterations=15000, meta_batch_size=25,
                    k_shot=1, num_inner_updates=1, meta_lr=0.001, modeldir='models', 
                    log=True, logdir='logs', logfile='log.csv', dataset='omniglot', 
-                   metareg=True, metareg_lambda=0.1, metareg_tau=1.0):
+                   metareg=True, metareg_lambda=0.1, metareg_eta=1.0):
     SUMMARY_INTERVAL = 10
     SAVE_INTERVAL = 100
     PRINT_INTERVAL = SUMMARY_INTERVAL  
@@ -191,7 +191,7 @@ def meta_train_fn(model, exp_string, data_generator,
             metareg_lambda -= (metareg_lambda*lambda_reg_decay_rate)
             result = outer_train_step(inp, model, optimizer, meta_batch_size=meta_batch_size, 
                                         num_inner_updates=num_inner_updates, metareg=metareg, 
-                                        metareg_lambda=metareg_lambda, metareg_tau=metareg_tau)
+                                        metareg_lambda=metareg_lambda, metareg_eta=metareg_eta)
 
             # write scalars to tensorboard
             task_train_en_params_dist = result[-1][0].numpy()
@@ -351,7 +351,7 @@ def run_maml(n_way=10, k_shot=1, meta_batch_size=25, meta_lr=0.001,
              log=True, logdir='./logs', dataset='omniglot', data_path='./omniglot_resized',
              meta_train=True, meta_train_iterations=15000, meta_train_k_shot=-1,
              meta_train_inner_update_lr=-1, mutual_exclusive=False, metareg=True, 
-             metareg_lambda=0.1, metareg_tau=1.0):
+             metareg_lambda=0.1, metareg_eta=1.0):
 
     data_generator = None
     # call data_generator and get data with k_shot*2 samples per class
@@ -388,7 +388,7 @@ def run_maml(n_way=10, k_shot=1, meta_batch_size=25, meta_lr=0.001,
                 '.inner_numstep_' + str(num_inner_updates) + '.meta_lr_' + str(meta_lr) + '.inner_updatelr_' + str(meta_train_inner_update_lr) + \
                 '.learn_inner_update_lr_' + str(learn_inner_update_lr)  + '.dataset_' + str(dataset) + \
                 '.mutual_exclusive_' + str(mutual_exclusive) + '.metareg_' + str(metareg)  + \
-                '.lambda_' + str(metareg_lambda) + '.tau_' + str(metareg_tau)
+                '.lambda_' + str(metareg_lambda) + '.tau_' + str(metareg_eta)
 
     logfile = exp_string+'.csv'
     if meta_train:
@@ -396,7 +396,7 @@ def run_maml(n_way=10, k_shot=1, meta_batch_size=25, meta_lr=0.001,
                       n_way, meta_train_iterations, meta_batch_size, k_shot,
                       num_inner_updates, meta_lr, modeldir, log, logdir, 
                       logfile=logfile, dataset=dataset, metareg=metareg, 
-                      metareg_lambda=metareg_lambda, metareg_tau=metareg_tau)
+                      metareg_lambda=metareg_lambda, metareg_eta=metareg_eta)
     else:
         meta_batch_size = 1
         print(modeldir + '/' + exp_string)

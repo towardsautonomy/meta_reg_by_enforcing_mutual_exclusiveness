@@ -19,5 +19,5 @@ if __name__ == '__main__':
                  meta_train_batch_size=args.meta_train_batch_size, learn_inner_update_lr=args.learn_inner_update_lr, modeldir=args.modeldir,  
                  logdir=args.logdir, dataset=args.dataset, data_path=args.data_path, meta_train=False,
                  meta_train_iterations=args.meta_train_iterations, meta_train_k_shot=args.meta_train_k_shot,
-                 mutual_exclusive=args.mutual_exclusive, metareg=args.metareg, metareg_tau=args.metareg_tau, metareg_lambda=args.metareg_lambda)
+                 mutual_exclusive=args.mutual_exclusive, metareg=args.metareg, metareg_eta=args.metareg_eta, metareg_lambda=args.metareg_lambda)
 

@@ -25,7 +25,7 @@ if __name__ == '__main__':
                     '.inner_numstep_' + str(args.num_inner_updates) + '.meta_lr_' + str(args.meta_lr) + '.inner_updatelr_' + str(args.inner_update_lr) + \
                     '.learn_inner_update_lr_' + str(args.learn_inner_update_lr) + '.dataset_' + str(args.dataset) + \
                     '.mutual_exclusive_' + str(args.mutual_exclusive) + '.metareg_' + str(args.metareg) + \
-                    '.lambda_' + str(args.metareg_lambda) + '.tau_' + str(args.metareg_tau)
+                    '.lambda_' + str(args.metareg_lambda) + '.tau_' + str(args.metareg_eta)
     csv_file = '{}/{}.csv'.format(args.logdir, exp_string)
 
     legends = ['pre-optimization raw plot',
