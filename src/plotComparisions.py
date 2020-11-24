@@ -8,27 +8,25 @@ from src.utils import moving_average, parse_args
 if __name__ == '__main__':
 
     # number of iterations to plot
-    n_iterations = 5000
+    n_iterations = 3000
     dataset = 'omniglot'
     plotdir = 'plots'
     
-    csv_files = ['logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_False.lambda_0.1.tau_1.0.csv',
-                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.1.tau_1.0.csv',
-                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.1.tau_2.0.csv',
-                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.1.tau_3.0.csv',
-                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.2.tau_3.0.csv',
-                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.3.tau_3.0.csv',
-                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.4.tau_3.0.csv',
-                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.4.tau_4.0.csv']
+    csv_files = ['logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_False.lambda_0.1.eta_1.0.csv',
+                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.1.eta_1.0.csv',
+                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.1.eta_2.0.csv',
+                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.1.eta_3.0.csv',
+                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.2.eta_3.0.csv',
+                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.3.eta_3.0.csv',
+                 'logs/cls_20.mbs_10.k_shot_1.inner_numstep_1.meta_lr_0.0025.inner_updatelr_0.04.learn_inner_update_lr_False.dataset_omniglot.mutual_exclusive_False.metareg_True.lambda_0.4.eta_3.0.csv']
 
     legends = ['post-optim accuracy (no meta-reg)',
-               'post-optim accuracy (lambda_0.1, tau_1.0)',
-               'post-optim accuracy (lambda_0.1, tau_2.0)',
-               'post-optim accuracy (lambda_0.1, tau_3.0)',
-               'post-optim accuracy (lambda_0.2, tau_3.0)',
-               'post-optim accuracy (lambda_0.3, tau_3.0)',
-               'post-optim accuracy (lambda_0.4, tau_3.0)',
-               'post-optim accuracy (lambda_0.4, tau_4.0)']
+               'post-optim accuracy (lambda_0.1, eta_1.0)',
+               'post-optim accuracy (lambda_0.1, eta_2.0)',
+               'post-optim accuracy (lambda_0.1, eta_3.0)',
+               'post-optim accuracy (lambda_0.2, eta_3.0)',
+               'post-optim accuracy (lambda_0.3, eta_3.0)',
+               'post-optim accuracy (lambda_0.4, eta_3.0)']
 
     # plot filename
     os.system('mkdir -p {}'.format(plotdir))
