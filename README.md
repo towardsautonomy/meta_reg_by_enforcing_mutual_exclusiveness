@@ -1,5 +1,9 @@
 # Meta-Regularization by enforcing Mutual-Exclusiveness
 
+This is the official implementation of paper - "Meta-Regularization by Enforcing Mutual-Exclusiveness" (https://arxiv.org/abs/2101.09819)
+
+In our work, we propose a regularization technique for meta-learning models that gives the model designer more control over the information flow during meta-training. Our method consists of a regularization function that is constructed by maximizing the distance between task-summary statistics, in the case of black-box models and task specific network parameters in the case of optimization based models during meta-training.
+
 ## Setup Instructions  
  - To setup conda environment `conda env create -f conda_env.yml`  
  
